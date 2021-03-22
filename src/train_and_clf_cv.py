@@ -100,9 +100,9 @@ def run_clf(train_feats, train_labels, test_feats, test_labels, args):
         test_pred = np.argmax(test_prob, axis=1)
 
     train_acc = np.mean(train_labels == train_pred) * 100.
-    train_xen = log_loss(train_labels, train_prob)
+    train_xen = log_loss(train_labels, train_prob, labels=list(range(max(train_labels + test_labels))))
     test_acc = np.mean(test_labels == test_pred) * 100.
-    test_xen = log_loss(test_labels, test_prob)
+    test_xen = log_loss(test_labels, test_prob, labels=list(range(max(train_labels + test_labels))))
 
     return (train_acc, train_xen, test_acc, test_xen), test_pred, test_prob
 
@@ -147,10 +147,6 @@ def run(train_h5, test_h5, max_iters, args):
     test_labels = np.loadtxt(args.train_label_f.replace("train", "test"),
                              dtype=int)
 
-    if min(train_labels) == 1:
-        train_labels -= 1
-    if min(test_labels) == 1:
-        test_labels -= 1
 
     if args.final:
         args.start = max_iters

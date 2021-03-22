@@ -368,7 +368,6 @@ def create_smm_config(args):
         config['cuda'] = args.cuda
         config['optim'] = args.optim
         config['disc'] = args.model_type in ("super", "hybrid")
-        config['update_ubm'] = args.update_ubm
         config['pos'] = args.pos
         config['mlabels'] = args.mlabels
         config['model_type'] = args.model_type
@@ -441,7 +440,6 @@ def create_baysmm_config(args):
         config['eta_q'] = args.eta_q
         config['eta_t'] = args.eta_t
         config['cuda'] = args.cuda
-        config['update_ubm'] = args.update_ubm
         config['trn_iters'] = args.trn
         config['pytorch_ver'] = torch.__version__
         config['save'] = args.save
@@ -519,7 +517,6 @@ def create_baysmm_config_v2(args):
         config['eta_q'] = args.eta_q
         config['eta_t'] = args.eta_t
         config['cuda'] = args.cuda
-        config['update_ubm'] = args.update_ubm
         config['trn_iters'] = args.trn
         config['pytorch_ver'] = torch.__version__
         config['save'] = args.save

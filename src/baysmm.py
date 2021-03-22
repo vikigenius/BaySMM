@@ -18,6 +18,7 @@ import numpy as np
 import torch
 from torch import nn
 import h5py
+import utils
 
 
 class BaySMM(nn.Module):
@@ -523,7 +524,7 @@ class BaySMM(nn.Module):
         loss_iters = torch.zeros((self.config['xtr_iters'] -
                                   self.config['xtr_done'], 2)).to(dtype=self.dtype,
                                                                   device=self.device)
-
+        doc_elbos = []
         self.Q.requires_grad_(True)
         self.sample()
 
@@ -547,13 +548,20 @@ class BaySMM(nn.Module):
                     ivec_file += str(i+1) + "_b_" + str(b_no) + ".npy"
                     np.save(ivec_file, self.Q.detach().cpu().numpy()[rng[0]:rng[1], :].T)
 
-                logging.info("Batch: %3d Iter %4d/%4d %s: %.1f %s: %.1f %s: %.2f", b_no+1,
+                doc_ppl = utils.compute_avg_doc_ppl(-loss[0].detach(), data_dict['ixs'])
+                uni_ppl = utils.compute_unigram_ppl(-loss[0].detach(), data_dict['ixs'])
+
+                logging.info("Batch: %3d Iter %4d/%4d %s: %.1f %s: %.1f %s: %.1f %s: %.1f %s: %.2f", b_no+1,
                              i+1, self.config['xtr_iters'], "ELBO",
                              -loss[0].detach().cpu().numpy(),
                              "KLD", loss[1].detach().cpu().numpy(),
+                             "DPPL", doc_ppl,
+                             "UPPL", uni_ppl,
                              "Time per batch", (time() - stime))
+                if i + 1 == self.config['xtr_iters']:
+                    doc_elbos.append(-loss[0].detach().cpu())        
                 self.sample()
-
+        torch.save(torch.tensor(doc_elbos), 'elbos.pt')
         self.Q.requires_grad_(False)
 
         loss, kld = self.compute_total_loss_batch_wise(dset, n_batches,

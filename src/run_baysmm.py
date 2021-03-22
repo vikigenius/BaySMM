@@ -289,7 +289,7 @@ def extract_ivector_posteriors(args):
     print("Log file:", config['exp_dir'] + 'extraction.log')
     if args.v:
         logging.getLogger().addHandler(logging.StreamHandler())
-    logging.info('PyTorch version: %s', str(torch.__version__))
+    logging.info('PyTorch version: %s, Cuda: %s', str(torch.__version__), str(args.cuda))
 
     mtx_list = get_mtx_list_for_extraction(args.extract_list)
 
@@ -331,7 +331,7 @@ def extract_ivector_posteriors(args):
 
         # move model to device (CUDA if available)
         model.to_device(model.device)
-
+        logging.info('Model Device: %s', str(model.device))
         # Create optimizer
         if config['optim'] == 'adam':
             opt_e = torch.optim.Adam([model.Q], lr=config['eta_q'])
@@ -510,6 +510,7 @@ def parse_arguments():
 
     torch.set_num_threads(args.mkl)
     torch.manual_seed(0)
+    print('CUDA is available: {}'.format(torch.cuda.is_available()))
     args.cuda = not args.nocuda and torch.cuda.is_available()
 
     return args
