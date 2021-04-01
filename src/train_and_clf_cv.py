@@ -26,7 +26,7 @@ from glcu import GLCU
 from glc import GLC
 
 
-def kfold_cv_train_set(train_feats, train_labels, args):
+def kfold_cv_train_set(train_feats, train_labels, true_labels, args):
     """ Run k-fold cross validation on train set
 
     Args:
@@ -49,7 +49,8 @@ def kfold_cv_train_set(train_feats, train_labels, args):
         (_, _, acc, xen), _, _ = run_clf(train_feats[trn_ixs],
                                          train_labels[trn_ixs],
                                          train_feats[dev_ixs],
-                                         train_labels[dev_ixs], args)
+                                         train_labels[dev_ixs],
+                                         true_labels, args)
 
         scores[i, :2] = acc, xen
 
@@ -58,7 +59,7 @@ def kfold_cv_train_set(train_feats, train_labels, args):
     return np.mean(scores[:, 0]), np.mean(scores[:, 1])
 
 
-def run_clf(train_feats, train_labels, test_feats, test_labels, args):
+def run_clf(train_feats, train_labels, test_feats, test_labels, true_labels, args):
     """ Train and classify using Gaussian linear classifier or
     multi-class logistic regression """
 
@@ -86,7 +87,6 @@ def run_clf(train_feats, train_labels, test_feats, test_labels, args):
         test_prob = mclr.predict_proba(test_feats)
 
     else:
-
         glcu = GLCU(args.trn, cov_type='diag', est_prior=True)
 
         glcu.train_b(train_feats, train_labels, args.bs)
@@ -100,9 +100,9 @@ def run_clf(train_feats, train_labels, test_feats, test_labels, args):
         test_pred = np.argmax(test_prob, axis=1)
 
     train_acc = np.mean(train_labels == train_pred) * 100.
-    train_xen = log_loss(train_labels, train_prob, labels=list(range(max(train_labels + test_labels))))
+    train_xen = log_loss(train_labels, train_prob, labels=true_labels)
     test_acc = np.mean(test_labels == test_pred) * 100.
-    test_xen = log_loss(test_labels, test_prob, labels=list(range(max(train_labels + test_labels))))
+    test_xen = log_loss(test_labels, test_prob, labels=true_labels)
 
     return (train_acc, train_xen, test_acc, test_xen), test_pred, test_prob
 
@@ -147,6 +147,7 @@ def run(train_h5, test_h5, max_iters, args):
     test_labels = np.loadtxt(args.train_label_f.replace("train", "test"),
                              dtype=int)
 
+    true_labels = range(np.amax(np.concatenate((train_labels, test_labels))) + 1)
 
     if args.final:
         args.start = max_iters
@@ -172,11 +173,11 @@ def run(train_h5, test_h5, max_iters, args):
             train_feats = train_feats[:, :dim]
             test_feats = test_feats[:, :dim]
 
-        score[:2] = kfold_cv_train_set(train_feats, train_labels, args)
+        score[:2] = kfold_cv_train_set(train_feats, train_labels, true_labels, args)
 
         score[2:6], test_pred, test_prob = run_clf(train_feats, train_labels,
                                                    test_feats, test_labels,
-                                                   args)
+                                                   true_labels, args)
         scores.append(score)
 
         if args.verbose:

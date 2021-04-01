@@ -85,9 +85,6 @@ class GLCU:
                 then data represents only mus and covs are passed as parameters
         """
 
-        if min(labels) == 1:
-            labels -= 1
-
         if self.cov_type == 'diag':
             self.dim = int(data.shape[1] / 2)
             mus = data[:, :self.dim]
